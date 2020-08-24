@@ -7,6 +7,34 @@
 
 #include "filesystem.h"
 
+/*
+* Read the super block, skip the front 1024 bytes
+*/
+int SuperBlockRead(struct FileSystem *fs) {
+    int ret = 1;
+    int64_t count = 0;
+    if (fs == NULL) {
+        ret = -1;
+        goto fail;
+    }
+
+    if (lseek(fs->fd, 1024, SEEK_SET) < 0) {
+	printf("Seek failed\n");
+	ret = -1;
+	goto fail;
+    }
+
+    count = read(fs->fd, &(fs->super), sizeof(struct ext4_super_block));
+    if (count != sizeof(struct ext4_super_block)) {
+        printf("read fail: actual=%ld, size=%d\n", count, sizeof(struct ext4_super_block));
+        ret = -1;
+        return false;
+    }
+
+fail:
+    return ret;
+}
+
 int FileSystemInit(struct FileSystem *fs, char *path) 
 {
     int ret = 1;
@@ -29,7 +57,7 @@ int FileSystemInit(struct FileSystem *fs, char *path)
 fail:
     free(fs);
     return ret;
-};
+}
 
 int FileSystemRelease(struct FileSystem *fs)
 {
