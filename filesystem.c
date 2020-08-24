@@ -10,7 +10,8 @@
 /*
 * Read the super block, skip the front 1024 bytes
 */
-int SuperBlockRead(struct FileSystem *fs) {
+int SuperBlockRead(struct FileSystem *fs)
+{
     int ret = 1;
     int64_t count = 0;
     if (fs == NULL) {
@@ -28,7 +29,7 @@ int SuperBlockRead(struct FileSystem *fs) {
     if (count != sizeof(struct ext4_super_block)) {
         printf("read fail: actual=%ld, size=%d\n", count, sizeof(struct ext4_super_block));
         ret = -1;
-        return false;
+        goto fail;
     }
 
 fail:
@@ -62,14 +63,20 @@ fail:
 int FileSystemRelease(struct FileSystem *fs)
 {
     int ret = 1;
+    if (fs == NULL) {
+        return -1;
+    }
+
     ret = close(fs->fd);
     if (ret < 0) {
         printf("Close failed\n");
         goto fail;
     }
 
+    free(fs);
     return ret;
 fail:
     printf("Release failed\n");
+    free(fs);
     return ret;
 }

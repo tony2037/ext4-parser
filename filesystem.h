@@ -11,3 +11,7 @@ struct FileSystem {
     uint32_t csum_seed;
     struct ext4_super_block super;
 };
+
+int SuperBlockRead(struct FileSystem *);
+int FileSystemInit(struct FileSystem *, char *);
+int FileSystemRelease(struct FileSystem *);
