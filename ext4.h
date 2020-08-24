@@ -558,6 +558,13 @@ enum {
 
 #define EXT4_GOOD_OLD_INODE_SIZE 128
 
+#define HAS_COMPAT_FEATURE(sb,mask)\
+        ( sb.s_feature_compat & (mask) )
+#define HAS_RO_COMPAT_FEATURE(sb,mask)\
+        ( sb.s_feature_ro_compat & (mask) )
+#define HAS_INCOMPAT_FEATURE(sb,mask)\
+        ( sb.s_feature_incompat & (mask) )
+
 #define EXT4_FEATURE_COMPAT_DIR_PREALLOC	0x0001
 #define EXT4_FEATURE_COMPAT_IMAGIC_INODES	0x0002
 #define EXT4_FEATURE_COMPAT_HAS_JOURNAL		0x0004

@@ -7,6 +7,15 @@
 
 #include "filesystem.h"
 
+uint32_t div_ceil(uint32_t dividen, uint32_t divisor)
+{
+    if (dividen == 0) {
+        return 0;
+    }
+
+    return (dividen - 1) / divisor + 1;
+}
+
 /*
 * Read the super block, skip the front 1024 bytes
 */
@@ -55,6 +64,11 @@ int FileSystemInit(struct FileSystem *fs, char *path)
         goto fail;
     }
     fs->fd = fd;
+
+    fs->block_size = (EXT4_MIN_BLOCK_SIZE << fs->super.s_log_block_size);
+    fs->descriptor_per_block = fs->block_size / fs->super.s_desc_size; // Assume it has 64bit feature
+    fs->itable_block_per_group = div_ceil(fs->super.s_inodes_per_group * fs->super.s_inode_size,  fs->block_size); // Did not checkt s_rev_level
+    fs->cluster_block_ratio = 1 << (fs->super.s_log_cluster_size - fs->super.s_log_block_size);
 
     return ret;
 fail:
