@@ -7,6 +7,15 @@
 
 #include "filesystem.h"
 
+uint64_t TotalBlockCountGet(struct FileSystem *fs)
+{
+    if (fs == NULL) {
+        return -1;
+    }
+    return fs->super.s_blocks_count_lo | (HAS_INCOMPAT_FEATURE(fs->super, EXT4_FEATURE_INCOMPAT_64BIT) ? 
+            ((uint64_t)fs->super.s_blocks_count_hi) << 32 : 0);
+}
+
 uint32_t div_ceil(uint32_t dividen, uint32_t divisor)
 {
     if (dividen == 0) {
@@ -17,8 +26,27 @@ uint32_t div_ceil(uint32_t dividen, uint32_t divisor)
 }
 
 /*
-* Read the super block, skip the front 1024 bytes
-*/
+ * Print the info of the filesytem
+ */
+void FileSystemPrint(struct FileSystem *fs)
+{
+    if (fs == NULL) {
+        printf("FileSystemPrint cannot take a null pointer\n");
+        return;
+    }
+    printf("Super block:\n");
+    printf("\tblock size = %llu\n", fs->block_size);
+    printf("\tcluster block ratio = %llu\n", fs->cluster_block_ratio);
+    printf("\tgroup count = %llu\n", fs->group_count);
+    printf("\tdescriptor per block = %llu\n", fs->descriptor_per_block);
+    printf("\titable block per group = %llu\n", fs->itable_block_per_group);
+    printf("\tdescriptor used block count = %llu\n", fs->descriptor_used_block_count);
+}
+
+/*
+ * Read the super block, skip the front 1024 bytes
+ *
+ */
 int SuperBlockRead(struct FileSystem *fs)
 {
     int ret = 1;
@@ -66,9 +94,10 @@ int FileSystemInit(struct FileSystem *fs, char *path)
     fs->fd = fd;
 
     fs->block_size = (EXT4_MIN_BLOCK_SIZE << fs->super.s_log_block_size);
+    fs->cluster_block_ratio = 1 << (fs->super.s_log_cluster_size - fs->super.s_log_block_size);
+    fs->group_count = div_ceil(TotalBlockCountGet(fs) - fs->super.s_first_data_block, fs->super.s_blocks_per_group);
     fs->descriptor_per_block = fs->block_size / fs->super.s_desc_size; // Assume it has 64bit feature
     fs->itable_block_per_group = div_ceil(fs->super.s_inodes_per_group * fs->super.s_inode_size,  fs->block_size); // Did not checkt s_rev_level
-    fs->cluster_block_ratio = 1 << (fs->super.s_log_cluster_size - fs->super.s_log_block_size);
 
     return ret;
 fail:

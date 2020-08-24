@@ -16,3 +16,4 @@ int SuperBlockRead(struct FileSystem *);
 int SuperBlockParse(struct FileSystem *);
 int FileSystemInit(struct FileSystem *, char *);
 int FileSystemRelease(struct FileSystem *);
+void FileSystemPrint();
