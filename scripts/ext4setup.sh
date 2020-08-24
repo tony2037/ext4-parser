@@ -11,8 +11,8 @@ next_dev_loop=$(losetup -f | cut -f3)
 echo "next_dev_loop=$next_dev_loop"
 losetup $next_dev_loop "$filename"
 
-# Format it as ext4, 100 blocks
-mkfs -t ext4 $next_dev_loop 100
+# Format it as ext4
+mkfs.ext4 $next_dev_loop
 
 echo "To undo losetup:"
 echo "losetup -d $next_dev_loop"
