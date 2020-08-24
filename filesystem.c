@@ -30,3 +30,18 @@ fail:
     free(fs);
     return ret;
 };
+
+int FileSystemRelease(struct FileSystem *fs)
+{
+    int ret = 1;
+    ret = close(fs->fd);
+    if (ret < 0) {
+        printf("Close failed\n");
+        goto fail;
+    }
+
+    return ret;
+fail:
+    printf("Release failed\n");
+    return ret;
+}
