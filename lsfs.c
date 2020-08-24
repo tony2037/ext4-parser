@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 
 #include "filesystem.h"
 
@@ -15,6 +16,7 @@ int main(int argc, char **argv)
         goto end;
     }
     filename = argv[1];
+    fs = malloc(sizeof(struct FileSystem));
 
     ret = FileSystemInit(fs, filename);
     if (ret < 0) {

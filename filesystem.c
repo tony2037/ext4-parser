@@ -42,7 +42,9 @@ int FileSystemInit(struct FileSystem *fs, char *path)
     int fd = -1;
 
     if (fs == NULL) {
-        fs = malloc(sizeof(struct FileSystem));
+        printf("NULL pointer\n");
+        ret = -1;
+        goto fail;
     }
     memset(fs, 0, sizeof(struct FileSystem));
 
