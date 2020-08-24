@@ -1,3 +1,4 @@
+CFLAG = -g
 BINS = lsfs
 
 SRCS = filesystem.c
