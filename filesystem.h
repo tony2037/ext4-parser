@@ -3,6 +3,8 @@
 struct FileSystem {
     int fd;
     uint64_t block_size;
+    uint64_t inode_count;
+    uint64_t block_count;
     uint64_t cluster_block_ratio;
     uint64_t group_count;
     uint32_t descriptor_per_block;
