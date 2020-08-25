@@ -1,3 +1,4 @@
+#include <stdbool.h>
 #include "ext4.h"
 
 struct FileSystem {
@@ -16,6 +17,9 @@ struct FileSystem {
     uint32_t csum_seed;
     struct ext4_super_block super;
 };
+
+bool HasRoot(uint32_t, uint32_t);
+bool GroupHasSuperblock(uint32_t, struct FileSystem *);
 
 int SuperBlockRead(struct FileSystem *);
 int SuperBlockParse(struct FileSystem *);

@@ -25,6 +25,40 @@ uint32_t div_ceil(uint32_t dividen, uint32_t divisor)
     return (dividen - 1) / divisor + 1;
 }
 
+bool HasRoot(uint32_t num, uint32_t root)
+{
+    while (num >= root) {
+        if (num == root) {
+            return true;
+        }
+        num = num / root;
+    }
+    return false;
+}
+
+bool GroupHasSuperblock(uint32_t group, struct FileSystem *fs)
+{
+    if (group == 0) {
+        return true;
+    }
+    if (HAS_COMPAT_FEATURE(fs->super, EXT4_FEATURE_COMPAT_SPARSE_SUPER2)) {
+        if (group == fs->super.s_backup_bgs[0] || group == fs->super.s_backup_bgs[1]) {
+            return true;
+        }
+        return false;
+    }
+    if ((group <= 1) || !HAS_RO_COMPAT_FEATURE(fs->super, EXT4_FEATURE_RO_COMPAT_SPARSE_SUPER)) {
+        return true;
+    }
+    if (!(group & 1)) {
+        return false;
+    }
+    if (HasRoot(group, 3) || (HasRoot(group, 5)) || HasRoot(group, 7)) {
+        return true;
+    }
+    return false;
+}
+
 /*
  * Traverse all groups, print it
  */
