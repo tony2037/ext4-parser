@@ -93,6 +93,12 @@ int FileSystemInit(struct FileSystem *fs, char *path)
     }
     fs->fd = fd;
 
+    ret = SuperBlockRead(fs);
+    if (ret < 0) {
+        printf("Read super block failed\n");
+        goto fail;
+    }
+
     fs->block_size = (EXT4_MIN_BLOCK_SIZE << fs->super.s_log_block_size);
     fs->cluster_block_ratio = 1 << (fs->super.s_log_cluster_size - fs->super.s_log_block_size);
     fs->group_count = div_ceil(TotalBlockCountGet(fs) - fs->super.s_first_data_block, fs->super.s_blocks_per_group);

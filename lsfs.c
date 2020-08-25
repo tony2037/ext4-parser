@@ -24,11 +24,6 @@ int main(int argc, char **argv)
         printf("Initialize FileSystem failed\n");
         goto end;
     }
-    ret = SuperBlockRead(fs);
-    if (ret < 0) {
-        printf("Read SuperBlock failed\n");
-        goto end;
-    }
 
 end:
     FileSystemRelease(fs);
