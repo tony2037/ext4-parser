@@ -89,6 +89,27 @@ uint64_t GroupLocationGet(struct FileSystem *fs, uint32_t group_num)
 }
 
 /*
+ * Given group number, get the location
+ */
+uint64_t GroupDescriptorLocationGet(struct FileSystem *fs, uint32_t descblock)
+{
+    uint32_t group_num = fs->descriptor_per_block * descblock;
+    uint64_t block = 0;
+
+    if (!HAS_INCOMPAT_FEATURE(fs->super, EXT4_FEATURE_INCOMPAT_META_BG) || (descblock < fs->super.s_first_meta_bg)) {
+        return GroupLocationGet(fs, 0) + 1 + descblock;
+    }
+
+    block = GroupLocationGet(fs, group_num);
+    if (GroupHasSuperblock(group_num, fs)) {
+        block += 1;
+    }
+
+    return block;
+}
+
+
+/*
  * Print the info of the filesytem
  */
 void FileSystemPrint(struct FileSystem *fs)
