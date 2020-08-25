@@ -26,6 +26,35 @@ uint32_t div_ceil(uint32_t dividen, uint32_t divisor)
 }
 
 /*
+ * Traverse all groups, print it
+ */
+void GroupsPrint(struct FileSystem *fs)
+{
+    uint32_t i = 0;
+    uint64_t start = 0;
+    for (i = 0; i < fs->group_count; i++) {
+        start = GroupLocationGet(fs, i);
+        printf("Group %lu:\n", i);
+        printf("\t start at: %llu\n", start);
+    }
+}
+
+/*
+ * Given group number, get the location
+ */
+uint64_t GroupLocationGet(struct FileSystem *fs, uint32_t group_num)
+{
+    uint32_t group_block = fs->super.s_first_data_block + group_num * fs->super.s_blocks_per_group;
+
+    /* Special case, if the block size is 1KB */
+    if (group_num == 0 && fs->block_size == 1024 && fs->cluster_block_ratio > 1) {
+        group_block += 1;
+    }
+
+    return group_block;
+}
+
+/*
  * Print the info of the filesytem
  */
 void FileSystemPrint(struct FileSystem *fs)

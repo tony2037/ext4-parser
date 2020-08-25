@@ -26,6 +26,7 @@ int main(int argc, char **argv)
     }
 
     FileSystemPrint(fs);
+    GroupsPrint(fs);
 
 end:
     FileSystemRelease(fs);
