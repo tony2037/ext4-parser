@@ -319,14 +319,14 @@ void GroupDescriptorsPrint(struct FileSystem *fs)
 
     for (i = 0; i < fs->group_count; i++) {
         pdesc = &(fs->group_descriptors[i]);
-        printf("Group %llu:\n", i);
-        printf("\tblock bitmap at %llu\n", BlockBitmapLocationGet(fs, pdesc));
-        printf("\tinode bitmap at %llu\n", InodeBitmapLocationGet(fs, pdesc));
-        printf("\tinode table at %llu\n", InodeTableLocationGet(fs, pdesc));
-        printf("\t%lu free blocks\n", FreeBlocksCountGet(fs, pdesc));
-        printf("\t%lu free inodes\n", FreeInodesCountGet(fs, pdesc));
-        printf("\t%lu used directories\n", UsedDirsCountGet(fs, pdesc));
-        printf("\t%lu unused inodes\n", UnusedInodesCountGet(fs, pdesc));
+        printf("Group %llu:", i);
+        printf(" block bitmap at %llu", BlockBitmapLocationGet(fs, pdesc));
+        printf(", inode bitmap at %llu", InodeBitmapLocationGet(fs, pdesc));
+        printf(", inode table at %llu\n", InodeTableLocationGet(fs, pdesc));
+        printf("\t%lu free blocks", FreeBlocksCountGet(fs, pdesc));
+        printf(", %lu free inodes", FreeInodesCountGet(fs, pdesc));
+        printf(", %lu used directories", UsedDirsCountGet(fs, pdesc));
+        printf(", %lu unused inodes\n", UnusedInodesCountGet(fs, pdesc));
         printf("\t[Checksum 0x%x]\n", pdesc->bg_checksum);
     }
 }
