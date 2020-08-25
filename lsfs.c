@@ -25,6 +25,8 @@ int main(int argc, char **argv)
         goto end;
     }
 
+    FileSystemPrint(fs);
+
 end:
     FileSystemRelease(fs);
     return ret;
