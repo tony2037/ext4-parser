@@ -311,24 +311,41 @@ void FileSystemPrint(struct FileSystem *fs)
 void GroupDescriptorsPrint(struct FileSystem *fs)
 {
     uint64_t i = 0;
-    struct ext4_group_desc *pdesc;
     if (fs == NULL) {
         printf("GroupDescriptorsPrint cannot take a null pointer\n");
         return;
     }
 
     for (i = 0; i < fs->group_count; i++) {
-        pdesc = &(fs->group_descriptors[i]);
-        printf("Group %llu:", i);
-        printf(" block bitmap at %llu", BlockBitmapLocationGet(fs, pdesc));
-        printf(", inode bitmap at %llu", InodeBitmapLocationGet(fs, pdesc));
-        printf(", inode table at %llu\n", InodeTableLocationGet(fs, pdesc));
-        printf("\t%lu free blocks", FreeBlocksCountGet(fs, pdesc));
-        printf(", %lu free inodes", FreeInodesCountGet(fs, pdesc));
-        printf(", %lu used directories", UsedDirsCountGet(fs, pdesc));
-        printf(", %lu unused inodes\n", UnusedInodesCountGet(fs, pdesc));
-        printf("\t[Checksum 0x%x]\n", pdesc->bg_checksum);
+        GroupDescriptorsPrintBynum(fs, i);
     }
+}
+
+/*
+ * givin the number of group, print the info of the group descriptor
+ */
+void GroupDescriptorsPrintBynum(struct FileSystem *fs, uint64_t num)
+{
+    struct ext4_group_desc *pdesc;
+    if (fs == NULL) {
+        printf("GroupDescriptorsPrint cannot take a null pointer\n");
+        return;
+    }
+    if (num >= fs->group_count) {
+        printf("Invalid Group number. This has to be 0 ~ %llu\n", fs->group_count);
+        return;
+    }
+
+    pdesc = &(fs->group_descriptors[num]);
+    printf("Group %llu:", num);
+    printf(" block bitmap at %llu", BlockBitmapLocationGet(fs, pdesc));
+    printf(", inode bitmap at %llu", InodeBitmapLocationGet(fs, pdesc));
+    printf(", inode table at %llu\n", InodeTableLocationGet(fs, pdesc));
+    printf("\t%lu free blocks", FreeBlocksCountGet(fs, pdesc));
+    printf(", %lu free inodes", FreeInodesCountGet(fs, pdesc));
+    printf(", %lu used directories", UsedDirsCountGet(fs, pdesc));
+    printf(", %lu unused inodes\n", UnusedInodesCountGet(fs, pdesc));
+    printf("\t[Checksum 0x%x]\n", pdesc->bg_checksum);
 }
 
 /*

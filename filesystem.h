@@ -32,6 +32,7 @@ uint64_t GroupDescriptorLocationGet(struct FileSystem *, uint32_t);
 void GroupsPrint(struct FileSystem *);
 uint64_t GroupDescriptorsFetch(struct FileSystem *);
 void GroupDescriptorsPrint(struct FileSystem *);
+void GroupDescriptorsPrintBynum(struct FileSystem *, uint64_t);
 uint64_t BlockRead(struct FileSystem *, uint64_t, uint64_t, char *);
 
 uint64_t BlockBitmapLocationGet(struct FileSystem *, struct ext4_group_desc *);
