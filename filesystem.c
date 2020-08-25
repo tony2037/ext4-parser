@@ -10,10 +10,91 @@
 uint64_t TotalBlockCountGet(struct FileSystem *fs)
 {
     if (fs == NULL) {
-        return -1;
+        return 0;
     }
     return fs->super.s_blocks_count_lo | (HAS_INCOMPAT_FEATURE(fs->super, EXT4_FEATURE_INCOMPAT_64BIT) ? 
             ((uint64_t)fs->super.s_blocks_count_hi) << 32 : 0);
+}
+
+uint64_t BlockBitmapLocationGet(struct FileSystem *fs, struct ext4_group_desc *pdesc)
+{
+    if (fs == NULL) {
+        return 0;
+    }
+    if (pdesc == NULL) {
+        return 0;
+    }
+    return pdesc->bg_block_bitmap_lo | (HAS_INCOMPAT_FEATURE(fs->super, EXT4_FEATURE_INCOMPAT_64BIT) ? 
+            ((uint64_t)pdesc->bg_block_bitmap_hi) << 32 : 0);
+}
+
+uint64_t InodeBitmapLocationGet(struct FileSystem *fs, struct ext4_group_desc *pdesc)
+{
+    if (fs == NULL) {
+        return 0;
+    }
+    if (pdesc == NULL) {
+        return 0;
+    }
+    return pdesc->bg_inode_bitmap_lo | (HAS_INCOMPAT_FEATURE(fs->super, EXT4_FEATURE_INCOMPAT_64BIT) ? 
+            ((uint64_t)pdesc->bg_inode_bitmap_hi) << 32 : 0);
+}
+
+uint64_t InodeTableLocationGet(struct FileSystem *fs, struct ext4_group_desc *pdesc)
+{
+    if (fs == NULL) {
+        return 0;
+    }
+    if (pdesc == NULL) {
+        return 0;
+    }
+    return pdesc->bg_inode_table_lo | (HAS_INCOMPAT_FEATURE(fs->super, EXT4_FEATURE_INCOMPAT_64BIT) ? 
+            ((uint64_t)pdesc->bg_inode_table_hi) << 32 : 0);
+}
+
+uint32_t FreeBlocksCountGet(struct FileSystem *fs, struct ext4_group_desc *pdesc)
+{
+    if (fs == NULL) {
+        return 0;
+    }
+    if (pdesc == NULL) {
+        return 0;
+    }
+    return pdesc->bg_free_blocks_count_lo | (uint32_t)pdesc->bg_free_blocks_count_hi << 16;
+}
+
+uint32_t UsedDirsCountGet(struct FileSystem *fs, struct ext4_group_desc *pdesc)
+{
+    if (fs == NULL) {
+        return 0;
+    }
+    if (pdesc == NULL) {
+        return 0;
+    }
+    return pdesc->bg_used_dirs_count_lo | (uint32_t)pdesc->bg_used_dirs_count_hi << 16;
+}
+
+uint32_t UnusedInodesCountGet(struct FileSystem *fs, struct ext4_group_desc *pdesc)
+{
+    if (fs == NULL) {
+        return 0;
+    }
+    if (pdesc == NULL) {
+        return 0;
+    }
+    return ((uint32_t)pdesc->bg_itable_unused_lo | (uint32_t)pdesc->bg_itable_unused_hi << 16);
+}
+
+uint32_t FreeInodesCountGet(struct FileSystem *fs, struct ext4_group_desc *pdesc)
+{
+    if (fs == NULL) {
+        return 0;
+    }
+    if (pdesc == NULL) {
+        return 0;
+    }
+    return pdesc->bg_free_inodes_count_lo | (HAS_INCOMPAT_FEATURE(fs->super, EXT4_FEATURE_INCOMPAT_64BIT) ? 
+            ((uint64_t)pdesc->bg_free_inodes_count_hi) << 32 : 0);
 }
 
 uint32_t div_ceil(uint32_t dividen, uint32_t divisor)
@@ -89,7 +170,7 @@ uint64_t GroupLocationGet(struct FileSystem *fs, uint32_t group_num)
 }
 
 /*
- * Given group number, get the location
+ * Given descriptor block number, get the location
  */
 uint64_t GroupDescriptorLocationGet(struct FileSystem *fs, uint32_t descblock)
 {
@@ -108,6 +189,99 @@ uint64_t GroupDescriptorLocationGet(struct FileSystem *fs, uint32_t descblock)
     return block;
 }
 
+/*
+ * Fetch all the Group Descriptors.
+ * Firstly figure out how many blocks these Descriptors takes
+ * Find the start location, and read data block by block
+ */
+uint64_t GroupDescriptorsFetch(struct FileSystem *fs)
+{
+    int ret = 0;
+    char *buf = NULL;
+    uint64_t block = 0;
+    uint64_t first_meta_bg = 0;
+    uint64_t i = 0, count = 0;
+
+    fs->group_descriptors = (struct ext4_group_desc *) malloc(fs->descriptor_used_block_count * fs->block_size);
+    buf = (char *)fs->group_descriptors;
+
+    if (HAS_INCOMPAT_FEATURE(fs->super, EXT4_FEATURE_INCOMPAT_META_BG)) {
+        first_meta_bg = fs->super.s_first_meta_bg;
+        if (first_meta_bg > fs->descriptor_used_block_count) {
+            first_meta_bg = fs->descriptor_used_block_count;
+        }
+    } else {
+        first_meta_bg = fs->descriptor_used_block_count;
+    }
+
+    if (first_meta_bg > 0) {
+        block = GroupDescriptorLocationGet(fs, 0);
+        if (!BlockRead(fs, block, first_meta_bg, buf)) {
+            ret = -1;
+            goto fail;
+        }
+
+        buf += fs->block_size * first_meta_bg;
+        count += fs->block_size * first_meta_bg;
+    }
+
+    for (i = first_meta_bg; i < fs->descriptor_used_block_count; i++) {
+        block = GroupDescriptorLocationGet(fs, i);
+
+        if (!BlockRead(fs, block, 1, buf)) {
+            ret = -1;
+            goto fail;
+        }
+
+        buf += fs->block_size;
+        count += fs->block_size;
+    }
+
+    return count;
+fail:
+    free(fs->group_descriptors);
+    return -1;
+}
+
+/*
+ * Read blocks
+ * @fs: FileSystem
+ * @start: the block number begin to read
+ * @num: How many blocks is gonna be read
+ * @buf: buffer for reading
+ */
+uint64_t BlockRead(struct FileSystem *fs, uint64_t start, uint64_t num, char *buf)
+{
+    uint64_t ret = 1;
+    int64_t count = 0;
+    if (fs == NULL) {
+        printf("BlockRead: fs is NULL\n");
+        ret = 0;
+        goto fail;
+    }
+    if (buf == NULL) {
+        printf("BlockRead: buf is NULL");
+        ret = 0;
+        goto fail;
+    }
+
+    if (lseek(fs->fd, fs->block_size * start, SEEK_SET) < 0) {
+        printf("BlockRead: Seek failed\n");
+	ret = 0;
+	goto fail;
+    }
+
+    count = read(fs->fd, buf, fs->block_size * num);
+    if (count != fs->block_size * num) {
+        printf("read fail: actual=%ld, size=%d\n", count, fs->block_size * num);
+        ret = 0;
+        goto fail;
+    }
+
+    return count;
+fail:
+    return ret;
+}
 
 /*
  * Print the info of the filesytem
@@ -132,6 +306,32 @@ void FileSystemPrint(struct FileSystem *fs)
 }
 
 /*
+ * Print the info of all group descriptors
+ */
+void GroupDescriptorsPrint(struct FileSystem *fs)
+{
+    uint64_t i = 0;
+    struct ext4_group_desc *pdesc;
+    if (fs == NULL) {
+        printf("GroupDescriptorsPrint cannot take a null pointer\n");
+        return;
+    }
+
+    for (i = 0; i < fs->group_count; i++) {
+        pdesc = &(fs->group_descriptors[i]);
+        printf("Group %llu:\n", i);
+        printf("\tblock bitmap at %llu\n", BlockBitmapLocationGet(fs, pdesc));
+        printf("\tinode bitmap at %llu\n", InodeBitmapLocationGet(fs, pdesc));
+        printf("\tinode table at %llu\n", InodeTableLocationGet(fs, pdesc));
+        printf("\t%lu free blocks\n", FreeBlocksCountGet(fs, pdesc));
+        printf("\t%lu free inodes\n", FreeInodesCountGet(fs, pdesc));
+        printf("\t%lu used directories\n", UsedDirsCountGet(fs, pdesc));
+        printf("\t%lu unused inodes\n", UnusedInodesCountGet(fs, pdesc));
+        printf("\t[Checksum 0x%x]\n", pdesc->bg_checksum);
+    }
+}
+
+/*
  * Read the super block, skip the front 1024 bytes
  *
  */
@@ -145,9 +345,9 @@ int SuperBlockRead(struct FileSystem *fs)
     }
 
     if (lseek(fs->fd, 1024, SEEK_SET) < 0) {
-	printf("Seek failed\n");
-	ret = -1;
-	goto fail;
+    printf("Seek failed\n");
+    ret = -1;
+    goto fail;
     }
 
     count = read(fs->fd, &(fs->super), sizeof(struct ext4_super_block));
@@ -198,6 +398,11 @@ int FileSystemInit(struct FileSystem *fs, char *path)
     fs->descriptor_per_block = fs->block_size / fs->descriptor_size;
     fs->descriptor_used_block_count = div_ceil(fs->group_count, fs->descriptor_per_block);
     fs->itable_block_per_group = div_ceil(fs->super.s_inodes_per_group * fs->super.s_inode_size,  fs->block_size); // Did not checkt s_rev_level
+
+    if (GroupDescriptorsFetch(fs) < 0) {
+        ret = -1;
+        goto fail;
+    }
 
     return ret;
 fail:

@@ -16,6 +16,7 @@ struct FileSystem {
     uint64_t descriptor_used_block_count;
     uint32_t csum_seed;
     struct ext4_super_block super;
+    struct ext4_group_desc *group_descriptors;
 };
 
 bool HasRoot(uint32_t, uint32_t);
@@ -29,3 +30,14 @@ void FileSystemPrint();
 uint64_t GroupLocationGet(struct FileSystem *, uint32_t);
 uint64_t GroupDescriptorLocationGet(struct FileSystem *, uint32_t);
 void GroupsPrint(struct FileSystem *);
+uint64_t GroupDescriptorsFetch(struct FileSystem *);
+void GroupDescriptorsPrint(struct FileSystem *);
+uint64_t BlockRead(struct FileSystem *, uint64_t, uint64_t, char *);
+
+uint64_t BlockBitmapLocationGet(struct FileSystem *, struct ext4_group_desc *);
+uint64_t InodeBitmapLocationGet(struct FileSystem *, struct ext4_group_desc *);
+uint64_t InodeTableLocationGet(struct FileSystem *, struct ext4_group_desc *);
+uint32_t FreeBlocksCountGet(struct FileSystem *, struct ext4_group_desc *);
+uint32_t FreeInodesCountGet(struct FileSystem *, struct ext4_group_desc *);
+uint32_t UsedDirsCountGet(struct FileSystem *, struct ext4_group_desc *);
+uint32_t UnusedInodesCountGet(struct FileSystem *, struct ext4_group_desc *);
