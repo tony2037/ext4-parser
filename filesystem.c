@@ -38,6 +38,7 @@ void FileSystemPrint(struct FileSystem *fs)
     printf("\tinode count = %llu\n", fs->inode_count);
     printf("\tblock count = %llu\n", fs->block_count);
     printf("\tblock size = %llu\n", fs->block_size);
+    printf("\tgroup size = %llu\n", fs->group_size);
     printf("\tcluster block ratio = %llu\n", fs->cluster_block_ratio);
     printf("\tgroup count = %llu\n", fs->group_count);
     printf("\tdescriptor per block = %llu\n", fs->descriptor_per_block);
@@ -104,6 +105,8 @@ int FileSystemInit(struct FileSystem *fs, char *path)
     fs->block_size = (EXT4_MIN_BLOCK_SIZE << fs->super.s_log_block_size);
     fs->inode_count = fs->super.s_inodes_count;
     fs->block_count = TotalBlockCountGet(fs);
+    fs->blocks_per_group = fs->super.s_blocks_per_group;
+    fs->group_size = fs->blocks_per_group * fs->block_size;
     fs->cluster_block_ratio = 1 << (fs->super.s_log_cluster_size - fs->super.s_log_block_size);
     fs->group_count = div_ceil(TotalBlockCountGet(fs) - fs->super.s_first_data_block, fs->super.s_blocks_per_group);
     fs->descriptor_per_block = fs->block_size / fs->super.s_desc_size; // Assume it has 64bit feature
