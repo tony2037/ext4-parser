@@ -244,6 +244,46 @@ fail:
 }
 
 /*
+ * Read bytes
+ * @fs: FileSystem
+ * @offset: the offset begin to read
+ * @len: How many bytes is gonna be read
+ * @buf: buffer for reading
+ */
+uint64_t BytesRead(struct FileSystem *fs, uint64_t offset, uint64_t len, char *buf)
+{
+    uint64_t ret = 1;
+    uint64_t count = 0;
+    if (fs == NULL) {
+        printf("BytesRead: fs is NULL\n");
+        ret = 0;
+        goto fail;
+    }
+    if (buf == NULL) {
+        printf("BytesRead: buf is NULL");
+        ret = 0;
+        goto fail;
+    }
+
+    if (lseek(fs->fd, offset, SEEK_SET) < 0) {
+        printf("BytesRead: Seek failed\n");
+	ret = 0;
+	goto fail;
+    }
+
+    count = read(fs->fd, buf, len);
+    if (count != len) {
+        printf("read fail: actual=%llu, size=%llu\n", count, len);
+        ret = len;
+        goto fail;
+    }
+
+    return count;
+fail:
+    return ret;
+}
+
+/*
  * Read blocks
  * @fs: FileSystem
  * @start: the block number begin to read
@@ -349,6 +389,49 @@ void GroupDescriptorsPrintBynum(struct FileSystem *fs, uint64_t num)
 }
 
 /*
+ * givin an inode number, print the inode table
+ */
+void InodeTablePrintBynum(struct FileSystem *fs, uint64_t num)
+{
+    if (num <= 0) {
+        printf("Invalid inode number\n");
+        return;
+    }
+
+    struct ext4_inode itable[fs->inodes_per_group];
+    uint64_t group = (num - 1) / fs->inodes_per_group;
+    // uint64_t index = (num - 1) % fs->super.s_inodes_per_group;
+    // uint64_t offset = index * fs->super.s_inode_size;
+    struct ext4_group_desc *pdesc = &(fs->group_descriptors[group]);
+    uint64_t location = InodeTableLocationGet(fs, pdesc);
+    uint64_t count = 0;
+    uint64_t i = 0;
+    count = BytesRead(fs, location * fs->block_size, /*fs->super.s_inode_size*/ sizeof(struct ext4_inode) * fs->inodes_per_group, (char *)&(itable[0]));
+    if (count == 0) {
+        printf("Try to get inode table: read failed\n");
+        return;
+    }
+
+    for (i = 0; i < fs->inodes_per_group; i++) {
+        printf("Inode: %llu\t", i + group * fs->inodes_per_group + 1);
+        printf("Type: %x\t", itable[i].i_mode);
+        printf("Mode: %x\t", itable[i].i_mode);
+        printf("Flag: %x\n", itable[i].i_flags);
+        printf("Generation: %lu\t", itable[i].i_generation);
+        printf("Version: 0x%x:%x\n", itable[i].i_version_hi, itable[i].osd1);
+        printf("User: %u\tGroup: %u\tSize: %llu\n", 
+                itable[i].i_uid, itable[i].i_gid, ((uint64_t)itable[i].i_size_lo | (uint64_t)itable[i].i_size_high << 32));
+        printf("Links: %u\tBlockcount: %lu\n", 
+                itable[i].i_links_count, itable[i].i_blocks_lo);
+        printf("ctime: 0x%x:%x\n", itable[i].i_ctime_extra, itable[i].i_ctime);
+        printf("atime: 0x%x:%x\n", itable[i].i_atime_extra, itable[i].i_atime);
+        printf("mtime: 0x%x:%x\n", itable[i].i_mtime_extra, itable[i].i_mtime);
+        printf("crtime: 0x%x:%x\n", itable[i].i_crtime_extra, itable[i].i_crtime);
+        printf("Size of extra inode fields: %u\n", itable[i].i_extra_isize);
+    }
+}
+
+/*
  * Read the super block, skip the front 1024 bytes
  *
  */
@@ -408,6 +491,7 @@ int FileSystemInit(struct FileSystem *fs, char *path)
     fs->inode_count = fs->super.s_inodes_count;
     fs->block_count = TotalBlockCountGet(fs);
     fs->blocks_per_group = fs->super.s_blocks_per_group;
+    fs->inodes_per_group = fs->super.s_inodes_per_group;
     fs->group_size = fs->blocks_per_group * fs->block_size;
     fs->descriptor_size = (HAS_INCOMPAT_FEATURE(fs->super, EXT4_FEATURE_INCOMPAT_64BIT)) ? fs->super.s_desc_size : EXT4_MIN_DESC_SIZE;
     fs->cluster_block_ratio = 1 << (fs->super.s_log_cluster_size - fs->super.s_log_block_size);

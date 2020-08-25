@@ -7,6 +7,7 @@ struct FileSystem {
     uint64_t inode_count;
     uint64_t block_count;
     uint64_t blocks_per_group;
+    uint64_t inodes_per_group;
     uint64_t group_size;
     uint64_t descriptor_size;
     uint64_t cluster_block_ratio;
@@ -33,7 +34,9 @@ void GroupsPrint(struct FileSystem *);
 uint64_t GroupDescriptorsFetch(struct FileSystem *);
 void GroupDescriptorsPrint(struct FileSystem *);
 void GroupDescriptorsPrintBynum(struct FileSystem *, uint64_t);
+void InodeTablePrintBynum(struct FileSystem *, uint64_t);
 uint64_t BlockRead(struct FileSystem *, uint64_t, uint64_t, char *);
+uint64_t BytesRead(struct FileSystem *, uint64_t, uint64_t, char *);
 
 uint64_t BlockBitmapLocationGet(struct FileSystem *, struct ext4_group_desc *);
 uint64_t InodeBitmapLocationGet(struct FileSystem *, struct ext4_group_desc *);
