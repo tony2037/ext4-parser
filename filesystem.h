@@ -37,9 +37,14 @@ void GroupDescriptorsPrintBynum(struct FileSystem *, uint64_t);
 void InodeTablePrintBynum(struct FileSystem *, uint64_t);
 void InodePrintBynum(struct FileSystem *, uint64_t);
 uint64_t InodeGetBynum(struct FileSystem *, uint64_t, struct ext4_inode *);
+
 uint64_t InodeBitmapGetBynum(struct FileSystem *, uint64_t, char *);
 int InodeStatusGetBynum(struct FileSystem *, uint64_t);
 void InodeStatusPrintBynum(struct FileSystem *, uint64_t);
+uint64_t BlockBitmapGetBynum(struct FileSystem *, uint64_t, char *);
+int BlockStatusGetBynum(struct FileSystem *, uint64_t);
+void BlockStatusPrintBynum(struct FileSystem *, uint64_t);
+
 uint64_t BlockRead(struct FileSystem *, uint64_t, uint64_t, char *);
 uint64_t BytesRead(struct FileSystem *, uint64_t, uint64_t, char *);
 
