@@ -503,10 +503,18 @@ int InodeStatusGetBynum(struct FileSystem *fs, uint64_t num)
         return -1;
     }
 
+    uint64_t group = (num - 1) / fs->inodes_per_group;
+    struct ext4_group_desc *pdesc = &(fs->group_descriptors[group]);
     int ret = 0;
     char buf[fs->block_size];
     uint64_t count = 0;
     uint64_t byte = 0, shift = 0;
+
+    if (pdesc->bg_flags & EXT4_BG_INODE_UNINIT) {
+        ret = 2;
+        return ret;
+    }
+
     count = InodeBitmapGetBynum(fs, num, buf);
     if (count == 0) {
         return -1;
@@ -531,6 +539,9 @@ void InodeStatusPrintBynum(struct FileSystem *fs, uint64_t num)
             break;
         case 0:
             printf("Inode %llu not in use\n", num);
+            break;
+        case 2:
+            printf("Inode table/bitmap uninitialized\n");
             break;
         case -1:
             printf("Get inode status failed\n");
@@ -580,10 +591,18 @@ int BlockStatusGetBynum(struct FileSystem *fs, uint64_t num)
         return -1;
     }
 
+    uint64_t group = (num - 1) / fs->inodes_per_group;
+    struct ext4_group_desc *pdesc = &(fs->group_descriptors[group]);
     int ret = 0;
     char buf[fs->block_size];
     uint64_t count = 0;
     uint64_t byte = 0, shift = 0;
+
+    if (pdesc->bg_flags & EXT4_BG_BLOCK_UNINIT) {
+        ret = 2;
+        return ret;
+    }
+
     count = BlockBitmapGetBynum(fs, num, buf);
     if (count == 0) {
         return -1;
@@ -608,6 +627,9 @@ void BlockStatusPrintBynum(struct FileSystem *fs, uint64_t num)
             break;
         case 0:
             printf("Block %llu not in use\n", num);
+            break;
+        case 2:
+            printf("Block bitmap uninitialized\n");
             break;
         case -1:
             printf("Get Block status failed\n");
