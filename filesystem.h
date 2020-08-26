@@ -35,6 +35,8 @@ uint64_t GroupDescriptorsFetch(struct FileSystem *);
 void GroupDescriptorsPrint(struct FileSystem *);
 void GroupDescriptorsPrintBynum(struct FileSystem *, uint64_t);
 void InodeTablePrintBynum(struct FileSystem *, uint64_t);
+void InodePrintBynum(struct FileSystem *, uint64_t);
+uint64_t InodeGetBynum(struct FileSystem *, uint64_t, struct ext4_inode *);
 uint64_t BlockRead(struct FileSystem *, uint64_t, uint64_t, char *);
 uint64_t BytesRead(struct FileSystem *, uint64_t, uint64_t, char *);
 

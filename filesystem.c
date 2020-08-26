@@ -391,44 +391,77 @@ void GroupDescriptorsPrintBynum(struct FileSystem *fs, uint64_t num)
 /*
  * givin an inode number, print the inode table
  */
-void InodeTablePrintBynum(struct FileSystem *fs, uint64_t num)
+void InodePrintTableBynum(struct FileSystem *fs, uint64_t num)
 {
     if (num <= 0) {
         printf("Invalid inode number\n");
         return;
     }
 
-    struct ext4_inode itable[fs->inodes_per_group];
     uint64_t group = (num - 1) / fs->inodes_per_group;
-    // uint64_t index = (num - 1) % fs->super.s_inodes_per_group;
-    // uint64_t offset = index * fs->super.s_inode_size;
-    struct ext4_group_desc *pdesc = &(fs->group_descriptors[group]);
-    uint64_t location = InodeTableLocationGet(fs, pdesc);
-    uint64_t count = 0;
     uint64_t i = 0;
-    count = BytesRead(fs, location * fs->block_size, /*fs->super.s_inode_size*/ sizeof(struct ext4_inode) * fs->inodes_per_group, (char *)&(itable[0]));
-    if (count == 0) {
-        printf("Try to get inode table: read failed\n");
+
+    for (i = 0; i < fs->inodes_per_group; i++) {
+        InodePrintBynum(fs, i + group * fs->inodes_per_group + 1);
+    }
+}
+
+/*
+ * givin an inode number, print the inode
+ */
+void InodePrintBynum(struct FileSystem *fs, uint64_t num)
+{
+    if (num <= 0) {
+        printf("Invalid inode number\n");
         return;
     }
 
-    for (i = 0; i < fs->inodes_per_group; i++) {
-        printf("Inode: %llu\t", i + group * fs->inodes_per_group + 1);
-        printf("Type: %x\t", itable[i].i_mode);
-        printf("Mode: %x\t", itable[i].i_mode);
-        printf("Flag: %x\n", itable[i].i_flags);
-        printf("Generation: %lu\t", itable[i].i_generation);
-        printf("Version: 0x%x:%x\n", itable[i].i_version_hi, itable[i].osd1);
-        printf("User: %u\tGroup: %u\tSize: %llu\n", 
-                itable[i].i_uid, itable[i].i_gid, ((uint64_t)itable[i].i_size_lo | (uint64_t)itable[i].i_size_high << 32));
-        printf("Links: %u\tBlockcount: %lu\n", 
-                itable[i].i_links_count, itable[i].i_blocks_lo);
-        printf("ctime: 0x%x:%x\n", itable[i].i_ctime_extra, itable[i].i_ctime);
-        printf("atime: 0x%x:%x\n", itable[i].i_atime_extra, itable[i].i_atime);
-        printf("mtime: 0x%x:%x\n", itable[i].i_mtime_extra, itable[i].i_mtime);
-        printf("crtime: 0x%x:%x\n", itable[i].i_crtime_extra, itable[i].i_crtime);
-        printf("Size of extra inode fields: %u\n", itable[i].i_extra_isize);
+    struct ext4_inode inode;
+    uint64_t count = 0;
+    count = InodeGetBynum(fs, num, &inode);
+    if (count == 0) {
+        printf("Try to get inode: read failed\n");
+        return;
     }
+
+    printf("Inode: %llu\t", num);
+    printf("Type: %x\t", inode.i_mode);
+    printf("Mode: %x\t", inode.i_mode);
+    printf("Flag: %x\n", inode.i_flags);
+    printf("Generation: %lu\t", inode.i_generation);
+    printf("Version: 0x%x:%x\n", inode.i_version_hi, inode.osd1);
+    printf("User: %u\tGroup: %u\tSize: %llu\n", 
+            inode.i_uid, inode.i_gid, ((uint64_t)inode.i_size_lo | (uint64_t)inode.i_size_high << 32));
+    printf("Links: %u\tBlockcount: %lu\n", 
+            inode.i_links_count, inode.i_blocks_lo);
+    printf("ctime: 0x%x:%x\n", inode.i_ctime_extra, inode.i_ctime);
+    printf("atime: 0x%x:%x\n", inode.i_atime_extra, inode.i_atime);
+    printf("mtime: 0x%x:%x\n", inode.i_mtime_extra, inode.i_mtime);
+    printf("crtime: 0x%x:%x\n", inode.i_crtime_extra, inode.i_crtime);
+    printf("Size of extra inode fields: %u\n", inode.i_extra_isize);
+}
+
+/*
+ * givin an inode number, get the inode
+ */
+uint64_t InodeGetBynum(struct FileSystem *fs, uint64_t num, struct ext4_inode *pinode)
+{
+    if (num <= 0) {
+        printf("Invalid inode number\n");
+        return;
+    }
+
+    uint64_t group = (num - 1) / fs->inodes_per_group;
+    struct ext4_group_desc *pdesc = &(fs->group_descriptors[group]);
+    uint64_t location = InodeTableLocationGet(fs, pdesc);
+    uint64_t count = 0;
+
+    count = BytesRead(fs, location * fs->block_size + (num - 1) * fs->super.s_inode_size, fs->super.s_inode_size, (char *)pinode);
+    if (count == 0) {
+        printf("Try to get inode: read failed\n");
+        return;
+    }
+    return count;
 }
 
 /*
