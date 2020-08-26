@@ -29,6 +29,7 @@ int main(int argc, char **argv)
     GroupsPrint(fs);
     GroupDescriptorsPrint(fs);
     InodePrintBynum(fs, 12);
+    InodeStatusPrintBynum(fs, 12);
 
 end:
     FileSystemRelease(fs);

@@ -465,6 +465,83 @@ uint64_t InodeGetBynum(struct FileSystem *fs, uint64_t num, struct ext4_inode *p
 }
 
 /*
+ * givin an inode number, get the inode bitmap
+ */
+uint64_t InodeBitmapGetBynum(struct FileSystem *fs, uint64_t num, char *buf)
+{
+    if (buf == NULL) {
+        goto fail;
+    }
+    if (num <= 0) {
+        printf("Invalid inode number\n");
+        goto fail;
+    }
+
+    uint64_t group = (num - 1) / fs->inodes_per_group;
+    struct ext4_group_desc *pdesc = &(fs->group_descriptors[group]);
+    uint64_t location = InodeBitmapLocationGet(fs, pdesc);
+    uint64_t count = 0;
+
+    count = BytesRead(fs, location * fs->block_size, fs->block_size, buf);
+    if (count == 0) {
+        printf("Try to get inode: read failed\n");
+        goto fail;
+    }
+    return count;
+
+fail:
+    return 0;
+}
+
+int InodeStatusGetBynum(struct FileSystem *fs, uint64_t num)
+{
+    if (fs == NULL) {
+        return -1;
+    }
+    if (num <= 0) {
+        printf("Invalid inode number\n");
+        return -1;
+    }
+
+    int ret = 0;
+    char buf[fs->block_size];
+    uint64_t count = 0;
+    uint8_t byte = 0, shift = 0;
+    count = InodeBitmapGetBynum(fs, num, buf);
+    if (count == 0) {
+        return -1;
+    }
+    byte = (uint8_t)(num - 1) / 8;
+    shift = num - 1 - byte * 8;
+    ret = (buf[byte] >> shift) & 0x1;
+
+    return ret;
+}
+
+void InodeStatusPrintBynum(struct FileSystem *fs, uint64_t num)
+{
+    if (num <= 0) {
+        printf("Invalid inode number\n");
+        return;
+    }
+    int ret = InodeStatusGetBynum(fs, num);
+    switch(ret) {
+        case 1:
+            printf("Inode %llu marked in use\n", num);
+            break;
+        case 0:
+            printf("Inode %llu not in use\n", num);
+            break;
+        case -1:
+            printf("Get inode status failed\n");
+            break;
+        default:
+            printf("Unknown status\n");
+            break;
+    }
+}
+
+/*
  * Read the super block, skip the front 1024 bytes
  *
  */
