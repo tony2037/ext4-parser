@@ -18,7 +18,7 @@ vim /etc/lvm/lvm.conf
 pvcreate /dev/loop0 /dev/loop1
 vgcreate vg_meta /dev/loop0 /dev/loop1
 lvcreate -l 100%FREE -n lv1 vg_meta
-mkfs.ext4
+echo "mkfs.ext4"
 mkfs.ext4 -O 64bit,meta_bg /dev/vg_meta/lv1
 
 echo "Test data is ready!"
