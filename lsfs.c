@@ -7,6 +7,8 @@
 int main(int argc, char **argv)
 {
     int ret = 0;
+    int feature = 0;
+    int num = 0;
     char *filename = NULL;
     struct FileSystem *fs = NULL;
 
@@ -24,14 +26,36 @@ int main(int argc, char **argv)
         printf("Initialize FileSystem failed\n");
         goto end;
     }
-
     FileSystemPrint(fs);
-    GroupsPrint(fs);
-    GroupDescriptorsPrint(fs);
-    InodePrintBynum(fs, 12);
-    InodeStatusPrintBynum(fs, 12);
-    BlockStatusPrintBynum(fs, 1444);
-    XattrPrintBynum(fs, 14);
+
+    sscanf(argv[2], "%d", &feature);
+    switch(feature) {
+        case 1:
+            GroupsPrint(fs);
+            break;
+        case 2:
+            GroupDescriptorsPrint(fs);
+            break;
+        case 3:
+            sscanf(argv[3], "%d", &num);
+            InodePrintBynum(fs, num);
+            break;
+        case 4:
+            sscanf(argv[3], "%d", &num);
+            InodeStatusPrintBynum(fs, num);
+            break;
+        case 5:
+            sscanf(argv[3], "%d", &num);
+            BlockStatusPrintBynum(fs, num);
+            break;
+        case 6:
+            sscanf(argv[3], "%d", &num);
+            XattrPrintBynum(fs, num);
+            break;
+        default:
+            printf("Unknown feature\n");
+            break;
+    }
 
 end:
     FileSystemRelease(fs);
