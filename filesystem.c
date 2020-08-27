@@ -456,7 +456,7 @@ uint64_t InodeGetBynum(struct FileSystem *fs, uint64_t num, struct ext4_inode *p
     uint64_t location = InodeTableLocationGet(fs, pdesc);
     uint64_t count = 0;
 
-    count = BytesRead(fs, location * fs->block_size + (num - 1) * fs->super.s_inode_size, fs->super.s_inode_size, (char *)pinode);
+    count = BytesRead(fs, location * fs->block_size + (num - 1) * fs->super.s_inode_size, sizeof(struct ext4_inode), (char *)pinode);
     if (count == 0) {
         printf("Try to get inode: read failed\n");
     }
