@@ -1,5 +1,6 @@
 #include <stdbool.h>
 #include "ext4.h"
+#include "xattr.h"
 
 struct FileSystem {
     int fd;
@@ -44,6 +45,9 @@ void InodeStatusPrintBynum(struct FileSystem *, uint64_t);
 uint64_t BlockBitmapGetBynum(struct FileSystem *, uint64_t, char *);
 int BlockStatusGetBynum(struct FileSystem *, uint64_t);
 void BlockStatusPrintBynum(struct FileSystem *, uint64_t);
+
+void XattrPrintBynum(struct FileSystem *, uint64_t);
+void XattrentryAllPrint(struct ext4_xattr_entry *);
 
 uint64_t BlockRead(struct FileSystem *, uint64_t, uint64_t, char *);
 uint64_t BytesRead(struct FileSystem *, uint64_t, uint64_t, char *);

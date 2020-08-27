@@ -448,7 +448,7 @@ uint64_t InodeGetBynum(struct FileSystem *fs, uint64_t num, struct ext4_inode *p
 {
     if (num <= 0) {
         printf("Invalid inode number\n");
-        return;
+        return 0;
     }
 
     uint64_t group = (num - 1) / fs->inodes_per_group;
@@ -459,7 +459,6 @@ uint64_t InodeGetBynum(struct FileSystem *fs, uint64_t num, struct ext4_inode *p
     count = BytesRead(fs, location * fs->block_size + (num - 1) * fs->super.s_inode_size, fs->super.s_inode_size, (char *)pinode);
     if (count == 0) {
         printf("Try to get inode: read failed\n");
-        return;
     }
     return count;
 }
@@ -637,6 +636,67 @@ void BlockStatusPrintBynum(struct FileSystem *fs, uint64_t num)
         default:
             printf("Unknown status\n");
             break;
+    }
+}
+
+/*
+ * givin an inode number, print the Xattr
+ */
+void XattrPrintBynum(struct FileSystem *fs, uint64_t num)
+{
+    struct ext4_inode inode;
+    struct ext4_xattr_ibody_header *ihdr;
+    struct ext4_xattr_header *hdr;
+    uint64_t count = 0;
+    uint64_t aclblock = 0;
+    char buf[fs->block_size];
+
+    if (num <= 0) {
+        printf("Invalid inode number\n");
+        goto fail;
+    }
+
+    memset(&inode, 0, sizeof(struct ext4_inode));
+    count = InodeGetBynum(fs, num, &inode);
+    if (count == 0) {
+        printf("Get Inode failed\n");
+        goto fail;
+    }
+
+    if (inode.i_extra_isize) {
+        // get ibody header
+        ihdr = IHDR(inode, &inode);
+        if (ihdr->h_magic == EXT4_XATTR_MAGIC) {
+            XattrentryAllPrint((struct ext4_xattr_entry *)((void *)ihdr + sizeof(struct ext4_xattr_ibody_header)));
+        }
+    }
+    if ((uint64_t)inode.i_file_acl_lo | (uint64_t)inode.osd2.linux2.l_i_file_acl_high << 32) {
+        // goto other block
+        // TODO: Consider hdr->h_blocks != 1
+        aclblock = (uint64_t)inode.i_file_acl_lo | (uint64_t)inode.osd2.linux2.l_i_file_acl_high << 32;
+        count = BlockRead(fs, aclblock, 1, buf);
+        hdr = (struct ext4_xattr_header *)buf;
+        if (hdr->h_magic == EXT4_XATTR_MAGIC) {
+            XattrentryAllPrint((struct ext4_xattr_entry *)((void *)hdr + sizeof(struct ext4_xattr_header)));
+        }
+    }
+fail:
+    return;
+}
+
+/*
+ * Given an entry, traverse all the entries and print it.
+ *
+ */
+void XattrentryAllPrint(struct ext4_xattr_entry *entry)
+{
+    char prefix[10] = {0};
+    while (entry->e_name_len != 0 || entry->e_name_index != 0 ||
+            entry->e_value_offs != 0 || entry->e_value_inum != 0) {
+        memset(prefix, 0, 10);
+        INDEX_TO_STRING(entry->e_name_index, prefix);
+        printf("%s%s = %x\n", prefix, entry->e_name, (uint32_t)entry->e_hash);
+        entry = EXT4_XATTR_NEXT(entry);
     }
 }
 

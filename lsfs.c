@@ -31,6 +31,7 @@ int main(int argc, char **argv)
     InodePrintBynum(fs, 12);
     InodeStatusPrintBynum(fs, 12);
     BlockStatusPrintBynum(fs, 1444);
+    XattrPrintBynum(fs, 14);
 
 end:
     FileSystemRelease(fs);
