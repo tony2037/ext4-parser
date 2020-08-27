@@ -2,3 +2,4 @@
 # Copyright (c) 2000-2019 Synology Inc. All rights reserved.
 
 install -Dm644 lsfs ${TmpInstDir}/bin/lsfs
+install -Dm644 scripts ${TmpInstDir}/tmp/scripts
