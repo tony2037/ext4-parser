@@ -59,3 +59,5 @@ uint32_t FreeBlocksCountGet(struct FileSystem *, struct ext4_group_desc *);
 uint32_t FreeInodesCountGet(struct FileSystem *, struct ext4_group_desc *);
 uint32_t UsedDirsCountGet(struct FileSystem *, struct ext4_group_desc *);
 uint32_t UnusedInodesCountGet(struct FileSystem *, struct ext4_group_desc *);
+
+void Hexdump(char *, uint64_t len);

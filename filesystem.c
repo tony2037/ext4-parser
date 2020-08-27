@@ -4,8 +4,36 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <endian.h>
 
 #include "filesystem.h"
+
+void Hexdump(char *buf, uint64_t len) {
+    uint64_t row = len / 16;
+    uint64_t remain = len - row * 16;
+    uint64_t r = 0, i = 0;
+    for (r = 0; r < row; r ++) {
+        for (i = 0; i < 16; i++) {
+            printf("%2x ", (unsigned char)buf[r * 16 + i]);
+        }
+        printf("| ");
+        for (i = 0; i < 16; i++) {
+            printf("%c ", (unsigned char)buf[r * 16 + i]);
+        }
+        printf("|\n");
+    }
+
+    if (remain > 0) {
+        for (i = row * 16; i < len; i++) {
+            printf("%2x ", (unsigned char)buf[i]);
+        }
+        printf("| ");
+        for (i = row * 16; i < len; i++) {
+            printf("%2c ", (unsigned char)buf[i]);
+        }
+        printf("|\n");
+    }
+}
 
 uint64_t TotalBlockCountGet(struct FileSystem *fs)
 {
@@ -97,7 +125,7 @@ uint32_t FreeInodesCountGet(struct FileSystem *fs, struct ext4_group_desc *pdesc
             ((uint64_t)pdesc->bg_free_inodes_count_hi) << 32 : 0);
 }
 
-uint32_t div_ceil(uint64_t dividen, uint64_t divisor)
+uint64_t div_ceil(uint64_t dividen, uint64_t divisor)
 {
     if (dividen == 0) {
         return 0;
@@ -154,6 +182,7 @@ void GroupsPrint(struct FileSystem *fs)
     }
 }
 
+// TODO: merge GroupLocationGet and GroupDescriptorLocationGet
 /*
  * Given group number, get the location
  */
@@ -178,6 +207,7 @@ uint64_t GroupDescriptorLocationGet(struct FileSystem *fs, uint32_t descblock)
     uint64_t block = 0;
 
     if (!HAS_INCOMPAT_FEATURE(fs->super, EXT4_FEATURE_INCOMPAT_META_BG) || (descblock < fs->super.s_first_meta_bg)) {
+        // TODO: consider 1k
         return GroupLocationGet(fs, 0) + 1 + descblock;
     }
 
@@ -202,18 +232,23 @@ uint64_t GroupDescriptorsFetch(struct FileSystem *fs)
     uint64_t first_meta_bg = 0;
     uint64_t i = 0, count = 0;
 
+    // TODO: Loading consideration
     fs->group_descriptors = (struct ext4_group_desc *) malloc(fs->descriptor_used_block_count * fs->block_size);
+    // TODO: initialize
     buf = (char *)fs->group_descriptors;
 
     if (HAS_INCOMPAT_FEATURE(fs->super, EXT4_FEATURE_INCOMPAT_META_BG)) {
         first_meta_bg = fs->super.s_first_meta_bg;
         if (first_meta_bg > fs->descriptor_used_block_count) {
+            // TODO: this should not happen
             first_meta_bg = fs->descriptor_used_block_count;
         }
     } else {
         first_meta_bg = fs->descriptor_used_block_count;
     }
 
+    // TODO: Fix, skip the previous block, see spec
+    // TODO: merge two section below
     if (first_meta_bg > 0) {
         block = GroupDescriptorLocationGet(fs, 0);
         if (!BlockRead(fs, block, first_meta_bg, buf)) {
@@ -377,6 +412,8 @@ void GroupDescriptorsPrintBynum(struct FileSystem *fs, uint64_t num)
     }
 
     pdesc = &(fs->group_descriptors[num]);
+
+    Hexdump((char *)pdesc, sizeof(struct ext4_group_desc));
     printf("Group %llu:", num);
     printf(" block bitmap at %llu", BlockBitmapLocationGet(fs, pdesc));
     printf(", inode bitmap at %llu", InodeBitmapLocationGet(fs, pdesc));
@@ -451,12 +488,14 @@ uint64_t InodeGetBynum(struct FileSystem *fs, uint64_t num, struct ext4_inode *p
         return 0;
     }
 
+    // TODO: use macro to handler
     uint64_t group = (num - 1) / fs->inodes_per_group;
     struct ext4_group_desc *pdesc = &(fs->group_descriptors[group]);
     uint64_t location = InodeTableLocationGet(fs, pdesc);
+    uint64_t offset = location * fs->block_size + (num - 1) * fs->super.s_inode_size;
     uint64_t count = 0;
 
-    count = BytesRead(fs, location * fs->block_size + (num - 1) * fs->super.s_inode_size, sizeof(struct ext4_inode), (char *)pinode);
+    count = BytesRead(fs, offset, sizeof(struct ext4_inode), (char *)pinode);
     if (count == 0) {
         printf("Try to get inode: read failed\n");
     }
@@ -502,6 +541,7 @@ int InodeStatusGetBynum(struct FileSystem *fs, uint64_t num)
         return -1;
     }
 
+    // TODO: macro
     uint64_t group = (num - 1) / fs->inodes_per_group;
     struct ext4_group_desc *pdesc = &(fs->group_descriptors[group]);
     int ret = 0;
@@ -518,6 +558,7 @@ int InodeStatusGetBynum(struct FileSystem *fs, uint64_t num)
     if (count == 0) {
         return -1;
     }
+
     byte = (num - 1) / 8;
     shift = num - 1 - byte * 8;
     ret = (buf[byte] >> shift) & 0x1;
@@ -590,6 +631,7 @@ int BlockStatusGetBynum(struct FileSystem *fs, uint64_t num)
         return -1;
     }
 
+    // TODO: macro state
     uint64_t group = (num - 1) / fs->inodes_per_group;
     struct ext4_group_desc *pdesc = &(fs->group_descriptors[group]);
     int ret = 0;
@@ -665,6 +707,7 @@ void XattrPrintBynum(struct FileSystem *fs, uint64_t num)
 
     if (inode.i_extra_isize) {
         // get ibody header
+        // TODO: see magic number in superblock
         ihdr = IHDR(inode, &inode);
         if (ihdr->h_magic == EXT4_XATTR_MAGIC) {
             XattrentryAllPrint((struct ext4_xattr_entry *)((void *)ihdr + sizeof(struct ext4_xattr_ibody_header)));
@@ -695,6 +738,7 @@ void XattrentryAllPrint(struct ext4_xattr_entry *entry)
             entry->e_value_offs != 0 || entry->e_value_inum != 0) {
         memset(prefix, 0, 10);
         INDEX_TO_STRING(entry->e_name_index, prefix);
+        // TODO: fix, value
         printf("%s%s = %x\n", prefix, entry->e_name, (uint32_t)entry->e_hash);
         entry = EXT4_XATTR_NEXT(entry);
     }
@@ -719,6 +763,7 @@ int SuperBlockRead(struct FileSystem *fs)
     goto fail;
     }
 
+    // TODO: see spec, consider 1K
     count = read(fs->fd, &(fs->super), sizeof(struct ext4_super_block));
     if (count != sizeof(struct ext4_super_block)) {
         printf("read fail: actual=%ld, size=%d\n", count, sizeof(struct ext4_super_block));

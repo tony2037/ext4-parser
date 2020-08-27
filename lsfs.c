@@ -31,10 +31,11 @@ int main(int argc, char **argv)
     sscanf(argv[2], "%d", &feature);
     switch(feature) {
         case 1:
-            GroupsPrint(fs);
+            GroupDescriptorsPrint(fs);
             break;
         case 2:
-            GroupDescriptorsPrint(fs);
+            sscanf(argv[3], "%d", &num);
+            GroupDescriptorsPrintBynum(fs, num);
             break;
         case 3:
             sscanf(argv[3], "%d", &num);
