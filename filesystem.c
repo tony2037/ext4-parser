@@ -97,7 +97,7 @@ uint32_t FreeInodesCountGet(struct FileSystem *fs, struct ext4_group_desc *pdesc
             ((uint64_t)pdesc->bg_free_inodes_count_hi) << 32 : 0);
 }
 
-uint32_t div_ceil(uint32_t dividen, uint32_t divisor)
+uint32_t div_ceil(uint64_t dividen, uint64_t divisor)
 {
     if (dividen == 0) {
         return 0;
