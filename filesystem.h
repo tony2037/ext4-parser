@@ -21,6 +21,9 @@ struct FileSystem {
     struct ext4_group_desc *group_descriptors;
 };
 
+/* Given an inode number return the group number which the inode is belonged to */
+#define INODE_TO_GROUP(num, inodes_per_group) (num-1)/inodes_per_group
+
 bool HasRoot(uint32_t, uint32_t);
 bool GroupHasSuperblock(uint32_t, struct FileSystem *);
 

@@ -427,7 +427,7 @@ void InodePrintTableBynum(struct FileSystem *fs, uint64_t num)
         return;
     }
 
-    uint64_t group = (num - 1) / fs->inodes_per_group;
+    uint64_t group = INODE_TO_GROUP(num, fs->inodes_per_group);
     uint64_t i = 0;
 
     for (i = 0; i < fs->inodes_per_group; i++) {
@@ -482,7 +482,7 @@ uint64_t InodeGetBynum(struct FileSystem *fs, uint64_t num, struct ext4_inode *p
     }
 
     // TODO: use macro to handler
-    uint64_t group = (num - 1) / fs->inodes_per_group;
+    uint64_t group = INODE_TO_GROUP(num, fs->inodes_per_group);
     struct ext4_group_desc *pdesc = &(fs->group_descriptors[group]);
     uint64_t location = InodeTableLocationGet(fs, pdesc);
     uint64_t offset = location * fs->block_size + (num - 1) * le16toh(fs->super.s_inode_size);
@@ -508,7 +508,7 @@ uint64_t InodeBitmapGetBynum(struct FileSystem *fs, uint64_t num, char *buf)
         goto fail;
     }
 
-    uint64_t group = (num - 1) / fs->inodes_per_group;
+    uint64_t group = INODE_TO_GROUP(num, fs->inodes_per_group);
     struct ext4_group_desc *pdesc = &(fs->group_descriptors[group]);
     uint64_t location = InodeBitmapLocationGet(fs, pdesc);
     uint64_t count = 0;
@@ -535,7 +535,7 @@ int InodeStatusGetBynum(struct FileSystem *fs, uint64_t num)
     }
 
     // TODO: macro
-    uint64_t group = (num - 1) / fs->inodes_per_group;
+    uint64_t group = INODE_TO_GROUP(num, fs->inodes_per_group);
     struct ext4_group_desc *pdesc = &(fs->group_descriptors[group]);
     int ret = 0;
     char buf[fs->block_size];
@@ -685,7 +685,7 @@ void XattrPrintBynum(struct FileSystem *fs, uint64_t num)
     uint64_t count = 0;
     uint64_t aclblock = 0;
     char buf[fs->block_size];
-    uint64_t group = (num - 1) / fs->inodes_per_group;
+    uint64_t group = INODE_TO_GROUP(num, fs->inodes_per_group);
     struct ext4_group_desc *pdesc = &(fs->group_descriptors[group]);
     uint64_t location = InodeTableLocationGet(fs, pdesc);
 
