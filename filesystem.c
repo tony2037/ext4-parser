@@ -14,22 +14,22 @@ void Hexdump(char *buf, uint64_t len) {
     uint64_t r = 0, i = 0;
     for (r = 0; r < row; r ++) {
         for (i = 0; i < 16; i++) {
-            printf("%2x ", (unsigned char)buf[r * 16 + i]);
+            printf("%02hhx ", (unsigned char)buf[r * 16 + i]);
         }
         printf("| ");
         for (i = 0; i < 16; i++) {
-            printf("%c ", (unsigned char)buf[r * 16 + i]);
+            printf("%02c ", (unsigned char)buf[r * 16 + i]);
         }
         printf("|\n");
     }
 
     if (remain > 0) {
         for (i = row * 16; i < len; i++) {
-            printf("%2x ", (unsigned char)buf[i]);
+            printf("%02hhx ", (unsigned char)buf[i]);
         }
         printf("| ");
         for (i = row * 16; i < len; i++) {
-            printf("%2c ", (unsigned char)buf[i]);
+            printf("%02c ", (unsigned char)buf[i]);
         }
         printf("|\n");
     }
