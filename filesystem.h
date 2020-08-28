@@ -47,7 +47,7 @@ int BlockStatusGetBynum(struct FileSystem *, uint64_t);
 void BlockStatusPrintBynum(struct FileSystem *, uint64_t);
 
 void XattrPrintBynum(struct FileSystem *, uint64_t);
-void XattrentryAllPrint(struct ext4_xattr_entry *);
+void XattrentryAllPrint(struct FileSystem *, struct ext4_xattr_entry *, uint64_t start);
 
 uint64_t BlockRead(struct FileSystem *, uint64_t, uint64_t, char *);
 uint64_t BytesRead(struct FileSystem *, uint64_t, uint64_t, char *);

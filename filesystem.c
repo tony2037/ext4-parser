@@ -685,6 +685,9 @@ void XattrPrintBynum(struct FileSystem *fs, uint64_t num)
     uint64_t count = 0;
     uint64_t aclblock = 0;
     char buf[fs->block_size];
+    uint64_t group = (num - 1) / fs->inodes_per_group;
+    struct ext4_group_desc *pdesc = &(fs->group_descriptors[group]);
+    uint64_t location = InodeTableLocationGet(fs, pdesc);
 
     if (num <= 0) {
         printf("Invalid inode number\n");
@@ -703,7 +706,8 @@ void XattrPrintBynum(struct FileSystem *fs, uint64_t num)
         // TODO: see magic number in superblock
         ihdr = IHDR(inode, &inode);
         if (le32toh(ihdr->h_magic) == EXT4_XATTR_MAGIC) {
-            XattrentryAllPrint((struct ext4_xattr_entry *)((void *)ihdr + sizeof(struct ext4_xattr_ibody_header)));
+            XattrentryAllPrint(fs, (struct ext4_xattr_entry *)((void *)ihdr + sizeof(struct ext4_xattr_ibody_header)),
+                    location * fs->block_size);
         }
     }
     if ((uint64_t)le32toh(inode.i_file_acl_lo) | (uint64_t)le16toh(inode.osd2.linux2.l_i_file_acl_high) << 32) {
@@ -713,7 +717,7 @@ void XattrPrintBynum(struct FileSystem *fs, uint64_t num)
         count = BlockRead(fs, aclblock, 1, buf);
         hdr = (struct ext4_xattr_header *)buf;
         if (le32toh(hdr->h_magic) == EXT4_XATTR_MAGIC) {
-            XattrentryAllPrint((struct ext4_xattr_entry *)((void *)hdr + sizeof(struct ext4_xattr_header)));
+            XattrentryAllPrint(fs, (struct ext4_xattr_entry *)((void *)hdr + sizeof(struct ext4_xattr_header)), aclblock * fs->block_size);
         }
     }
 fail:
@@ -724,15 +728,19 @@ fail:
  * Given an entry, traverse all the entries and print it.
  *
  */
-void XattrentryAllPrint(struct ext4_xattr_entry *entry)
+void XattrentryAllPrint(struct FileSystem *fs, struct ext4_xattr_entry *entry, uint64_t start)
 {
     char prefix[10] = {0};
+    char value[10] = {0};
+    uint64_t count = 0;
     while (entry->e_name_len != 0 || entry->e_name_index != 0 ||
             entry->e_value_offs != 0 || entry->e_value_inum != 0) {
         memset(prefix, 0, 10);
+        memset(value, 0, 10);
         INDEX_TO_STRING(entry->e_name_index, prefix);
         // TODO: fix, value
-        printf("%s%s = %x\n", prefix, entry->e_name, (uint32_t)entry->e_hash);
+        BytesRead(fs, start + le16toh(entry->e_value_offs), le32toh(entry->e_value_size), value);
+        printf("%s%s = %s\n", prefix, entry->e_name, value);
         entry = EXT4_XATTR_NEXT(entry);
     }
 }
