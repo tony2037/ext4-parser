@@ -56,7 +56,7 @@ uint64_t BlockBitmapLocationGet(struct FileSystem *, struct ext4_group_desc *);
 uint64_t InodeBitmapLocationGet(struct FileSystem *, struct ext4_group_desc *);
 uint64_t InodeTableLocationGet(struct FileSystem *, struct ext4_group_desc *);
 uint32_t FreeBlocksCountGet(struct FileSystem *, struct ext4_group_desc *);
-uint32_t FreeInodesCountGet(struct FileSystem *, struct ext4_group_desc *);
+uint64_t FreeInodesCountGet(struct FileSystem *, struct ext4_group_desc *);
 uint32_t UsedDirsCountGet(struct FileSystem *, struct ext4_group_desc *);
 uint32_t UnusedInodesCountGet(struct FileSystem *, struct ext4_group_desc *);
 

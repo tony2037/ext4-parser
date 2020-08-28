@@ -105,7 +105,7 @@ uint32_t UnusedInodesCountGet(struct FileSystem *fs, struct ext4_group_desc *pde
     return ((uint32_t)pdesc->bg_itable_unused_lo | (uint32_t)pdesc->bg_itable_unused_hi << 16);
 }
 
-uint32_t FreeInodesCountGet(struct FileSystem *fs, struct ext4_group_desc *pdesc)
+uint64_t FreeInodesCountGet(struct FileSystem *fs, struct ext4_group_desc *pdesc)
 {
     if (fs == NULL) {
         return 0;
