@@ -696,6 +696,8 @@ void XattrPrintBynum(struct FileSystem *fs, uint64_t num)
     uint64_t group = INODE_TO_GROUP(num, fs->inodes_per_group);
     struct ext4_group_desc *pdesc = &(fs->group_descriptors[group]);
     uint64_t location = InodeTableLocationGet(fs, pdesc);
+    uint64_t offset = 0;
+    char *newpinode = NULL;
 
     if (num <= 0) {
         printf("Invalid inode number\n");
@@ -712,7 +714,14 @@ void XattrPrintBynum(struct FileSystem *fs, uint64_t num)
     if (inode.i_extra_isize) {
         // get ibody header
         // TODO: see magic number in superblock
-        ihdr = IHDR(inode, &inode);
+        memset(buf, 0, fs->block_size);
+        offset = location + fs->block_size + (num - 1) * le16toh(fs->super.s_inode_size);
+        count = BytesRead(fs, offset, fs->block_size, buf);
+        if (count == 0) {
+            printf("Try to get inode: read failed\n");
+        }
+        newpinode = buf;
+        ihdr = IHDR(inode, newpinode);
         if (le32toh(ihdr->h_magic) == EXT4_XATTR_MAGIC) {
             XattrentryAllPrint(fs, (struct ext4_xattr_entry *)((void *)ihdr + sizeof(struct ext4_xattr_ibody_header)),
                     location * fs->block_size);
@@ -721,6 +730,7 @@ void XattrPrintBynum(struct FileSystem *fs, uint64_t num)
     if ((uint64_t)le32toh(inode.i_file_acl_lo) | (uint64_t)le16toh(inode.osd2.linux2.l_i_file_acl_high) << 32) {
         // goto other block
         // TODO: Consider hdr->h_blocks != 1
+        memset(buf, 0, fs->block_size);
         aclblock = (uint64_t)le32toh(inode.i_file_acl_lo) | (uint64_t)le16toh(inode.osd2.linux2.l_i_file_acl_high) << 32;
         count = BlockRead(fs, aclblock, 1, buf);
         hdr = (struct ext4_xattr_header *)buf;
