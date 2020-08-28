@@ -54,6 +54,7 @@ void XattrentryAllPrint(struct FileSystem *, struct ext4_xattr_entry *, uint64_t
 
 uint64_t BlockRead(struct FileSystem *, uint64_t, uint64_t, char *);
 uint64_t BytesRead(struct FileSystem *, uint64_t, uint64_t, char *);
+uint64_t BytesWrite(struct FileSystem *, uint64_t, uint64_t, char *);
 
 uint64_t BlockBitmapLocationGet(struct FileSystem *, struct ext4_group_desc *);
 uint64_t InodeBitmapLocationGet(struct FileSystem *, struct ext4_group_desc *);
@@ -64,3 +65,5 @@ uint32_t UsedDirsCountGet(struct FileSystem *, struct ext4_group_desc *);
 uint32_t UnusedInodesCountGet(struct FileSystem *, struct ext4_group_desc *);
 
 void Hexdump(char *, uint64_t len);
+
+uint64_t Redirect(struct FileSystem *, uint64_t, uint64_t);

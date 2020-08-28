@@ -250,6 +250,8 @@ uint64_t GroupDescriptorsFetch(struct FileSystem *fs)
 
     // TODO: Fix, skip the previous block, see spec
     // TODO: merge two section below
+    // see: https://elixir.bootlin.com/linux/latest/source/fs/ext4/resize.c#L1877
+    // first_meta_bg indicate which block number is expended to
     if (first_meta_bg > 0) {
         block = GroupDescriptorLocationGet(fs, 0);
         if (!BlockRead(fs, block, first_meta_bg, buf)) {
@@ -310,6 +312,46 @@ uint64_t BytesRead(struct FileSystem *fs, uint64_t offset, uint64_t len, char *b
     count = read(fs->fd, buf, len);
     if (count != len) {
         printf("read fail: actual=%llu, size=%llu\n", count, len);
+        ret = len;
+        goto fail;
+    }
+
+    return count;
+fail:
+    return ret;
+}
+
+/*
+ * Write bytes
+ * @fs: FileSystem
+ * @offset: the offset begin to write
+ * @len: How many bytes is gonna be write
+ * @buf: buffer for writing
+ */
+uint64_t BytesWrite(struct FileSystem *fs, uint64_t offset, uint64_t len, char *buf)
+{
+    uint64_t ret = 1;
+    uint64_t count = 0;
+    if (fs == NULL) {
+        printf("BytesWrite: fs is NULL\n");
+        ret = 0;
+        goto fail;
+    }
+    if (buf == NULL) {
+        printf("BytesWrite: buf is NULL");
+        ret = 0;
+        goto fail;
+    }
+
+    if (lseek(fs->fd, offset, SEEK_SET) < 0) {
+        printf("BytesWrite: Seek failed\n");
+	ret = 0;
+	goto fail;
+    }
+
+    count = write(fs->fd, buf, len);
+    if (count != len) {
+        printf("write fail: actual=%llu, size=%llu\n", count, len);
         ret = len;
         goto fail;
     }
@@ -807,7 +849,7 @@ int FileSystemInit(struct FileSystem *fs, char *path)
     }
     memset(fs, 0, sizeof(struct FileSystem));
 
-    fd = open(path, O_RDONLY);
+    fd = open(path, O_RDWR);
     if (fd < 0) {
         printf("Open file failed\n");
         ret = -1;
@@ -864,4 +906,24 @@ fail:
     printf("Release failed\n");
     free(fs);
     return ret;
+}
+
+uint64_t Redirect(struct FileSystem *fs, uint64_t source, uint64_t dest)
+{
+    struct ext4_inode inodesrc, inodedst;
+    uint64_t group = INODE_TO_GROUP(source, fs->inodes_per_group);
+    struct ext4_group_desc *pdesc = &(fs->group_descriptors[group]);
+    uint64_t location = InodeTableLocationGet(fs, pdesc);
+    uint64_t offset = location * fs->block_size + (source - 1) * le16toh(fs->super.s_inode_size);
+    uint64_t count = 0;
+    InodeGetBynum(fs, source, &inodesrc);
+    InodeGetBynum(fs, dest, &inodedst);
+    memcpy((void *)&(inodesrc.i_block[0]), (void *)&(inodedst.i_block[0]), sizeof(__le32) * EXT4_N_BLOCKS);
+    count = BytesWrite(fs, offset, fs->super.s_inode_size, (char *)&inodesrc);
+    if (count == 0) {
+        goto fail;
+    }
+
+fail:
+    return count;
 }

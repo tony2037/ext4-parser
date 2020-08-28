@@ -9,6 +9,7 @@ int main(int argc, char **argv)
     int ret = 0;
     int feature = 0;
     int num = 0;
+    int src = 0, dst = 0;
     char *filename = NULL;
     struct FileSystem *fs = NULL;
 
@@ -52,6 +53,11 @@ int main(int argc, char **argv)
         case 6:
             sscanf(argv[3], "%d", &num);
             XattrPrintBynum(fs, num);
+            break;
+        case 7:
+            sscanf(argv[3], "%d", &src);
+            sscanf(argv[4], "%d", &dst);
+            Redirect(fs, src, dst);
             break;
         default:
             printf("Unknown feature\n");
