@@ -16,12 +16,20 @@ void Hexdump(char *buf, uint64_t len) {
         for (i = 0; i < 16; i++) {
             printf("%02hhx ", (unsigned char)buf[r * 16 + i]);
         }
+        printf("\t%02c", *"|");
+        for (i = 0; i < 16; i++) {
+            printf("%02c ", (unsigned char)buf[r * 16 + i]);
+        }
         printf("\n");
     }
 
     if (remain > 0) {
         for (i = row * 16; i < len; i++) {
             printf("%02hhx ", (unsigned char)buf[i]);
+        }
+        printf("\t%02c", *"|");
+        for (i = row * 16; i < len; i++) {
+            printf("%02c ", (unsigned char)buf[i]);
         }
         printf("\n");
     }
