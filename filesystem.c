@@ -239,10 +239,10 @@ uint64_t GroupDescriptorsFetch(struct FileSystem *fs)
     buf = (char *)fs->group_descriptors;
 
     if (HAS_INCOMPAT_FEATURE(fs->super, EXT4_FEATURE_INCOMPAT_META_BG)) {
-        first_meta_bg = fs->super.s_first_meta_bg;
+        first_meta_bg = le32toh(fs->super.s_first_meta_bg);
         if (first_meta_bg > fs->descriptor_used_block_count) {
             // TODO: this should not happen
-            first_meta_bg = fs->descriptor_used_block_count;
+            goto fail;
         }
     } else {
         first_meta_bg = fs->descriptor_used_block_count;
