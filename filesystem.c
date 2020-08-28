@@ -234,6 +234,7 @@ uint64_t GroupDescriptorsFetch(struct FileSystem *fs)
 
     // TODO: Loading consideration
     fs->group_descriptors = (struct ext4_group_desc *) malloc(fs->descriptor_used_block_count * fs->block_size);
+    memset(fs->group_descriptors, 0, fs->descriptor_used_block_count * fs->block_size);
     // TODO: initialize
     buf = (char *)fs->group_descriptors;
 
