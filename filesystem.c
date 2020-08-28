@@ -485,7 +485,7 @@ uint64_t InodeGetBynum(struct FileSystem *fs, uint64_t num, struct ext4_inode *p
     uint64_t group = (num - 1) / fs->inodes_per_group;
     struct ext4_group_desc *pdesc = &(fs->group_descriptors[group]);
     uint64_t location = InodeTableLocationGet(fs, pdesc);
-    uint64_t offset = location * fs->block_size + (num - 1) * fs->super.s_inode_size;
+    uint64_t offset = location * fs->block_size + (num - 1) * le16toh(fs->super.s_inode_size);
     uint64_t count = 0;
 
     count = BytesRead(fs, offset, sizeof(struct ext4_inode), (char *)pinode);
@@ -542,7 +542,7 @@ int InodeStatusGetBynum(struct FileSystem *fs, uint64_t num)
     uint64_t count = 0;
     uint64_t byte = 0, shift = 0;
 
-    if (pdesc->bg_flags & EXT4_BG_INODE_UNINIT) {
+    if (le16toh(pdesc->bg_flags) & EXT4_BG_INODE_UNINIT) {
         ret = 2;
         return ret;
     }
@@ -632,7 +632,7 @@ int BlockStatusGetBynum(struct FileSystem *fs, uint64_t num)
     uint64_t count = 0;
     uint64_t byte = 0, shift = 0;
 
-    if (pdesc->bg_flags & EXT4_BG_BLOCK_UNINIT) {
+    if (le16toh(pdesc->bg_flags) & EXT4_BG_BLOCK_UNINIT) {
         ret = 2;
         return ret;
     }
@@ -702,17 +702,17 @@ void XattrPrintBynum(struct FileSystem *fs, uint64_t num)
         // get ibody header
         // TODO: see magic number in superblock
         ihdr = IHDR(inode, &inode);
-        if (ihdr->h_magic == EXT4_XATTR_MAGIC) {
+        if (le32toh(ihdr->h_magic) == EXT4_XATTR_MAGIC) {
             XattrentryAllPrint((struct ext4_xattr_entry *)((void *)ihdr + sizeof(struct ext4_xattr_ibody_header)));
         }
     }
-    if ((uint64_t)inode.i_file_acl_lo | (uint64_t)inode.osd2.linux2.l_i_file_acl_high << 32) {
+    if ((uint64_t)le32toh(inode.i_file_acl_lo) | (uint64_t)le16toh(inode.osd2.linux2.l_i_file_acl_high) << 32) {
         // goto other block
         // TODO: Consider hdr->h_blocks != 1
-        aclblock = (uint64_t)inode.i_file_acl_lo | (uint64_t)inode.osd2.linux2.l_i_file_acl_high << 32;
+        aclblock = (uint64_t)le32toh(inode.i_file_acl_lo) | (uint64_t)le16toh(inode.osd2.linux2.l_i_file_acl_high) << 32;
         count = BlockRead(fs, aclblock, 1, buf);
         hdr = (struct ext4_xattr_header *)buf;
-        if (hdr->h_magic == EXT4_XATTR_MAGIC) {
+        if (le32toh(hdr->h_magic) == EXT4_XATTR_MAGIC) {
             XattrentryAllPrint((struct ext4_xattr_entry *)((void *)hdr + sizeof(struct ext4_xattr_header)));
         }
     }
