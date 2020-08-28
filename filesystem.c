@@ -32,8 +32,8 @@ uint64_t TotalBlockCountGet(struct FileSystem *fs)
     if (fs == NULL) {
         return 0;
     }
-    return fs->super.s_blocks_count_lo | (HAS_INCOMPAT_FEATURE(fs->super, EXT4_FEATURE_INCOMPAT_64BIT) ? 
-            ((uint64_t)fs->super.s_blocks_count_hi) << 32 : 0);
+    return (uint64_t)le32toh(fs->super.s_blocks_count_lo) | (HAS_INCOMPAT_FEATURE(fs->super, EXT4_FEATURE_INCOMPAT_64BIT) ? 
+            ((uint64_t)le32toh(fs->super.s_blocks_count_hi)) << 32 : 0);
 }
 
 uint64_t BlockBitmapLocationGet(struct FileSystem *fs, struct ext4_group_desc *pdesc)
@@ -44,8 +44,8 @@ uint64_t BlockBitmapLocationGet(struct FileSystem *fs, struct ext4_group_desc *p
     if (pdesc == NULL) {
         return 0;
     }
-    return pdesc->bg_block_bitmap_lo | (HAS_INCOMPAT_FEATURE(fs->super, EXT4_FEATURE_INCOMPAT_64BIT) ? 
-            ((uint64_t)pdesc->bg_block_bitmap_hi) << 32 : 0);
+    return (uint64_t)le32toh(pdesc->bg_block_bitmap_lo) | (HAS_INCOMPAT_FEATURE(fs->super, EXT4_FEATURE_INCOMPAT_64BIT) ? 
+            ((uint64_t)le32toh(pdesc->bg_block_bitmap_hi)) << 32 : 0);
 }
 
 uint64_t InodeBitmapLocationGet(struct FileSystem *fs, struct ext4_group_desc *pdesc)
@@ -56,8 +56,8 @@ uint64_t InodeBitmapLocationGet(struct FileSystem *fs, struct ext4_group_desc *p
     if (pdesc == NULL) {
         return 0;
     }
-    return pdesc->bg_inode_bitmap_lo | (HAS_INCOMPAT_FEATURE(fs->super, EXT4_FEATURE_INCOMPAT_64BIT) ? 
-            ((uint64_t)pdesc->bg_inode_bitmap_hi) << 32 : 0);
+    return (uint64_t)le32toh(pdesc->bg_inode_bitmap_lo) | (HAS_INCOMPAT_FEATURE(fs->super, EXT4_FEATURE_INCOMPAT_64BIT) ? 
+            ((uint64_t)le32toh(pdesc->bg_inode_bitmap_hi)) << 32 : 0);
 }
 
 uint64_t InodeTableLocationGet(struct FileSystem *fs, struct ext4_group_desc *pdesc)
@@ -68,8 +68,8 @@ uint64_t InodeTableLocationGet(struct FileSystem *fs, struct ext4_group_desc *pd
     if (pdesc == NULL) {
         return 0;
     }
-    return pdesc->bg_inode_table_lo | (HAS_INCOMPAT_FEATURE(fs->super, EXT4_FEATURE_INCOMPAT_64BIT) ? 
-            ((uint64_t)pdesc->bg_inode_table_hi) << 32 : 0);
+    return (uint64_t)le32toh(pdesc->bg_inode_table_lo) | (HAS_INCOMPAT_FEATURE(fs->super, EXT4_FEATURE_INCOMPAT_64BIT) ? 
+            ((uint64_t)le32toh(pdesc->bg_inode_table_hi)) << 32 : 0);
 }
 
 uint32_t FreeBlocksCountGet(struct FileSystem *fs, struct ext4_group_desc *pdesc)
@@ -80,7 +80,7 @@ uint32_t FreeBlocksCountGet(struct FileSystem *fs, struct ext4_group_desc *pdesc
     if (pdesc == NULL) {
         return 0;
     }
-    return pdesc->bg_free_blocks_count_lo | (uint32_t)pdesc->bg_free_blocks_count_hi << 16;
+    return (uint32_t)le16toh(pdesc->bg_free_blocks_count_lo) | (uint32_t)le16toh(pdesc->bg_free_blocks_count_hi) << 16;
 }
 
 uint32_t UsedDirsCountGet(struct FileSystem *fs, struct ext4_group_desc *pdesc)
@@ -91,7 +91,7 @@ uint32_t UsedDirsCountGet(struct FileSystem *fs, struct ext4_group_desc *pdesc)
     if (pdesc == NULL) {
         return 0;
     }
-    return pdesc->bg_used_dirs_count_lo | (uint32_t)pdesc->bg_used_dirs_count_hi << 16;
+    return (uint32_t)le16toh(pdesc->bg_used_dirs_count_lo) | (uint32_t)le16toh(pdesc->bg_used_dirs_count_hi) << 16;
 }
 
 uint32_t UnusedInodesCountGet(struct FileSystem *fs, struct ext4_group_desc *pdesc)
@@ -102,10 +102,10 @@ uint32_t UnusedInodesCountGet(struct FileSystem *fs, struct ext4_group_desc *pde
     if (pdesc == NULL) {
         return 0;
     }
-    return ((uint32_t)pdesc->bg_itable_unused_lo | (uint32_t)pdesc->bg_itable_unused_hi << 16);
+    return ((uint32_t)le16toh(pdesc->bg_itable_unused_lo) | (uint32_t)le16toh(pdesc->bg_itable_unused_hi) << 16);
 }
 
-uint64_t FreeInodesCountGet(struct FileSystem *fs, struct ext4_group_desc *pdesc)
+uint32_t FreeInodesCountGet(struct FileSystem *fs, struct ext4_group_desc *pdesc)
 {
     if (fs == NULL) {
         return 0;
@@ -113,8 +113,8 @@ uint64_t FreeInodesCountGet(struct FileSystem *fs, struct ext4_group_desc *pdesc
     if (pdesc == NULL) {
         return 0;
     }
-    return pdesc->bg_free_inodes_count_lo | (HAS_INCOMPAT_FEATURE(fs->super, EXT4_FEATURE_INCOMPAT_64BIT) ? 
-            ((uint64_t)pdesc->bg_free_inodes_count_hi) << 32 : 0);
+    return (uint32_t)le16toh(pdesc->bg_free_inodes_count_lo) | (HAS_INCOMPAT_FEATURE(fs->super, EXT4_FEATURE_INCOMPAT_64BIT) ? 
+            ((uint32_t)le16toh(pdesc->bg_free_inodes_count_hi)) << 16 : 0);
 }
 
 uint64_t div_ceil(uint64_t dividen, uint64_t divisor)
