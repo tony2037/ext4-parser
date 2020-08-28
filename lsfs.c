@@ -26,7 +26,7 @@ int main(int argc, char **argv)
         printf("Initialize FileSystem failed\n");
         goto end;
     }
-    FileSystemPrint(fs);
+    // FileSystemPrint(fs);
 
     sscanf(argv[2], "%d", &feature);
     switch(feature) {

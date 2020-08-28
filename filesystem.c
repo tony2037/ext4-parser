@@ -16,22 +16,14 @@ void Hexdump(char *buf, uint64_t len) {
         for (i = 0; i < 16; i++) {
             printf("%02hhx ", (unsigned char)buf[r * 16 + i]);
         }
-        printf("| ");
-        for (i = 0; i < 16; i++) {
-            printf("%02c ", (unsigned char)buf[r * 16 + i]);
-        }
-        printf("|\n");
+        printf("\n");
     }
 
     if (remain > 0) {
         for (i = row * 16; i < len; i++) {
             printf("%02hhx ", (unsigned char)buf[i]);
         }
-        printf("| ");
-        for (i = row * 16; i < len; i++) {
-            printf("%02c ", (unsigned char)buf[i]);
-        }
-        printf("|\n");
+        printf("\n");
     }
 }
 
@@ -461,6 +453,7 @@ void InodePrintBynum(struct FileSystem *fs, uint64_t num)
         return;
     }
 
+    Hexdump((char *)&inode, sizeof(struct ext4_inode));
     printf("Inode: %llu\t", num);
     printf("Type: %x\t", inode.i_mode);
     printf("Mode: %x\t", inode.i_mode);
